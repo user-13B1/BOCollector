@@ -14,23 +14,29 @@ namespace BOCollector
     public partial class Form1 : Form
     {
         private readonly Writer console;
-        Player player;
+        GameControl game;
+        
 
         public Form1()
         {
             InitializeComponent();
             console = new Writer(new object(), this, ConsoleBox);
+           
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
-           
-            player = new Player(console);
-
+            game = new GameControl(console);
+            game.Status += SetStatus;
+            SetStatus("Loaded");
         }
 
-        private void Button1_Click(object sender, EventArgs e) => player.Start();
+        private void Button1_Click(object sender, EventArgs e) => game.Start();
 
-      
+        private void button2_Click(object sender, EventArgs e) => game.menuControl.autoIt.PrintMousePos();
+
+        private void SetStatus(string message) => StatusLabel1.Text = message;
+   
+
     }
 }

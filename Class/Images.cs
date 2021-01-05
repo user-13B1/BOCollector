@@ -4,32 +4,33 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Drawing;
-using OpenCvSharp;
 using System.IO;
 using System.Windows.Forms;
 
 namespace BOCollector
 {
-    class LDmanager
+    class Images
     {
-        private readonly AutoIt autoIt;
-        private readonly OpenCV openCV;
+        private Writer console;
+        private AutoIt autoIt;
+        private OpenCV openCV;
+        private Dictionary<string, Bitmap> gameImages;
         private Dictionary<string, Bitmap> buttonImages;
         private Dictionary<string, Bitmap> stateImages;
-        private readonly Writer console;
 
-        public LDmanager(Writer console)
+
+        public Images(Writer console, AutoIt autoIt, OpenCV openCV)
         {
             this.console = console;
-            Task.Run(() => LoadImages(@"\button", buttonImages));
-            Task.Run(() => LoadImages(@"\state", stateImages));
+            this.autoIt = autoIt;
+            this.openCV = openCV;
 
-            autoIt = new AutoIt(console, "LDPlayer-1");
-            openCV = new OpenCV(console, autoIt);
-
+            Task.Run(() => LoadImages(@"\button", out buttonImages));
+            Task.Run(() => LoadImages(@"\state", out stateImages));
+            Task.Run(() => LoadImages(@"\game_image", out gameImages));
         }
 
-        private bool LoadImages(string folderName, Dictionary<string, Bitmap> images)
+        private bool LoadImages(string folderName, out Dictionary<string, Bitmap> images)
         {
             string imgFolderDirPath = Directory.GetCurrentDirectory() + folderName;
             images = new Dictionary<string, Bitmap>();
@@ -41,6 +42,7 @@ namespace BOCollector
             }
 
             string[] imgPaths = Directory.GetFiles(imgFolderDirPath, "*.png");
+
             for (int i = 0; i < imgPaths.Length; i++)
             {
                 if (!File.Exists(imgPaths[i]))
@@ -51,41 +53,12 @@ namespace BOCollector
 
                 string name = imgPaths[i];
                 name = name.Replace(imgFolderDirPath, "").Replace("\\", "").Replace(".png", "");
-
                 images.Add(name, new Bitmap(imgPaths[i]));
             }
 
             return true;
         }
 
-        public bool GoBattle()
-        {
-            PressButton();
 
-
-            return true;
-        }
-
-        private void PressButton()
-        {
-            openCV.SearchImageFromDict(buttonImages, out OpenCvSharp.Point F);
-
-
-        }
     }
-
-
 }
-
-
-//if (openCV.Search("StartGame", out _))
-//{
-//    console.WriteLine("State:Game Lobby.");
-//    return true;
-//}
-
-//if (!buttonImages.TryGetValue(nameBtn, out Bitmap buffer))
-//{
-//    console.WriteLine("Error. Invalid image name.");
-//    return false;
-//}
