@@ -10,74 +10,84 @@ namespace BOCollector
     class BattleControl
     {
         private readonly Writer console;
-        private readonly AutoIt autoIt;
+        internal readonly AutoIt autoIt;
         private readonly OpenCV openCV;
         private readonly Images images;
+        delegate bool Operation();
 
-        string state;
-       
-
-        public BattleControl(Writer console, AutoIt autoIt, OpenCV openCV)
+        public BattleControl(Writer console, AutoIt autoIt, OpenCV openCV, Images images)
         {
             this.console = console;
             this.autoIt = autoIt;
             this.openCV = openCV;
-
-            state = "Forward";
+            this.images = images;
         }
 
-        internal bool Battle()
+        internal bool Start()
         {
-            AnalizeGame();
-            Move();
+            string state = StateSearch();
+            Operation action = GetAction(state);
+            if (!action())
+                return false;
+
             return true;
         }
 
-        private void AnalizeGame()
+        Operation GetAction(string state) => state switch
+        {
+            "Forward" => ActionForward,
+            "Attack" => ActionAttack,
+            
+            { } => ActionError,
+            null => ActionError
+        };
+
+        private string StateSearch()
         {
             Bitmap bitmap;
             OpenCvSharp.Point p;
-            gameImages.TryGetValue("lifebar", out bitmap);
-            if (openCV.SearchImageFromName(bitmap, out p))
+
+            //Определяем количество жизней игрока
+            images.gameImages.TryGetValue("lifebar", out bitmap);
+            if (openCV.SearchImageFromRegion(bitmap, out p,new Rectangle(100, 200, 200,300)))
             {
-                // console.WriteLine(p);
+                console.WriteLine(p);
             }
             else
                 console.WriteLine("Not found lives");
 
 
-            gameImages.TryGetValue("EnemyLife", out bitmap);
+            //Поиск цели
+            images.gameImages.TryGetValue("EnemyLife", out bitmap);
             if (openCV.SearchImageFromName(bitmap, out p))
             {
-                state = "Attack";
+                return "Attack";
             }
             else
             {
-                state = "Forward";
+                return "Forward";
             }
 
-            void Move()
-            {
-                switch (state)
-                {
-                    case "Forward":
-                        console.WriteLine("Forward.");
-                        Key.Forward();
-                        break;
+        }
 
-                    case "Attack":
-                        console.WriteLine("Attack");
-                        Key.Attack();
-                        break;
+        bool ActionForward()
+        {
+            console.WriteLine("Forward.");
+            Key.Forward();
+            return true;
+        }
 
+        bool ActionAttack()
+        {
+            console.WriteLine("Attack");
+            Key.Attack();
+            return true;
+        }
 
-                    default:
-                        console.WriteLine("Invalid State.");
-                        break;
-                }
-
-            }
-
+        bool ActionError()
+        {
+            console.WriteLine("Invalid State.");
+            return true;
         }
 
 

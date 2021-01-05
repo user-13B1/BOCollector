@@ -100,6 +100,40 @@ namespace BOCollector
             return true;
         }
 
+
+        internal bool SearchImageFromRegion(Bitmap bitmap, out OpenCvSharp.Point f, Rectangle regionSearch)
+        {
+
+            window = autoIt.window;
+            double threshold = 0.9;        //Пороговое значение SearchImg
+            f = new OpenCvSharp.Point();
+            if (bitmap == null)
+                return false;
+            gameScreen_graphics.CopyFromScreen(window.X, window.Y, 0, 0, size_region);                         //делаем скрин экрана
+            using Mat result = new Mat();
+            using Mat gameScreen = OpenCvSharp.Extensions.BitmapConverter.ToMat(gameScreen_bitmap);       //Сохраняем скрин экрана в mat
+            using Mat mat_region_desktop_gray = gameScreen.CvtColor(ColorConversionCodes.BGR2GRAY);
+            using Mat searchImg = OpenCvSharp.Extensions.BitmapConverter.ToMat(bitmap);
+            using Mat mat_search_gray = searchImg.CvtColor(ColorConversionCodes.BGR2GRAY);
+
+            Cv2.MatchTemplate(mat_region_desktop_gray, mat_search_gray, result, TemplateMatchModes.CCoeffNormed);        //Поиск шаблона
+            Cv2.Threshold(result, result, threshold, 1.0, ThresholdTypes.Tozero);
+            Cv2.MinMaxLoc(result, out double minVal, out double maxVal, out OpenCvSharp.Point minLoc, out OpenCvSharp.Point maxLoc); //Поиск точки
+            if (maxVal > threshold)
+            {
+                f = maxLoc;
+                DrawToScreen.DrawRect(maxLoc.X + window.X, maxLoc.Y + window.Y, bitmap.Width, bitmap.Height);
+
+                console.WriteLine(maxVal);
+            }
+            else
+                return false;
+
+            return true;
+        }
+
+
+
         public bool SearchImg(Bitmap searchBitmap, out OpenCvSharp.Point f)
         {
             window = autoIt.window;

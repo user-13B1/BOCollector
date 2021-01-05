@@ -14,9 +14,9 @@ namespace BOCollector
         private Writer console;
         private AutoIt autoIt;
         private OpenCV openCV;
-        private Dictionary<string, Bitmap> gameImages;
-        private Dictionary<string, Bitmap> buttonImages;
-        private Dictionary<string, Bitmap> stateImages;
+        public Dictionary<string, Bitmap> gameImages;
+        public Dictionary<string, Bitmap> buttonImages;
+        public Dictionary<string, Bitmap> stateImages;
 
 
         public Images(Writer console, AutoIt autoIt, OpenCV openCV)

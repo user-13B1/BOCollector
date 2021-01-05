@@ -42,13 +42,13 @@ namespace BOCollector
                 if (menuControl.IsBattle())
                 {
                     Status?.Invoke("Battle");
-                    if (!menuControl.Battle())
+                    if (!battleControl.Start())
                         return;
                 }
                 else
                 {
                     Status?.Invoke("Menu");
-                    if (!menuControl.StartBattle())
+                    if (!menuControl.Start())
                         return;
                 }
                 Thread.Sleep(1000);

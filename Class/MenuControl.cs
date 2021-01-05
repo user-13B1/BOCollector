@@ -19,16 +19,16 @@ namespace BOCollector
         internal readonly AutoIt autoIt;
         private readonly OpenCV openCV;
         private readonly Images images;
-
         private readonly Writer console;
         delegate bool Operation();
        
 
-        public MenuControl(Writer console, AutoIt autoIt, OpenCV openCV)
+        public MenuControl(Writer console, AutoIt autoIt, OpenCV openCV, Images images)
         {
             this.console = console;
             this.autoIt = autoIt;
             this.openCV = openCV;
+            this.images = images;
         }
 
         internal bool IsBattle()
@@ -41,7 +41,7 @@ namespace BOCollector
             return true;
         }
 
-        public bool StartBattle()
+        public bool Start()
         {
             CloseFrameOnScreen();
             string state = StateSearch();
@@ -64,7 +64,7 @@ namespace BOCollector
 
         private string StateSearch()
         {
-            if (openCV.SearchImageFromDict(stateImages, out _, out string name))
+            if (openCV.SearchImageFromDict(images.stateImages, out _, out string name))
             {
                 console.WriteLine($"State found: {name}");
                 return name;
@@ -75,7 +75,7 @@ namespace BOCollector
 
         private void CloseFrameOnScreen()
         {
-            if (openCV.SearchImageFromDict(buttonImages, out OpenCvSharp.Point centerPoint, out string name))
+            if (openCV.SearchImageFromDict(images.buttonImages, out OpenCvSharp.Point centerPoint, out string name))
             {
                 console.WriteLine($"Button found: {name}");
                 autoIt.ClickMouseToWindow(centerPoint.X,centerPoint.Y);
@@ -109,7 +109,7 @@ namespace BOCollector
 
         bool ActionError()
         {
-            console.WriteLine("Error State.");
+            console.WriteLine("Invalid State.");
             return true;
         }
 
