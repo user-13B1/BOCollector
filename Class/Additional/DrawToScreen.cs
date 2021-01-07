@@ -38,10 +38,10 @@ namespace BOCollector
                 IntPtr desktop = GetDC(IntPtr.Zero); // указатель для вывода изображения на экран
                 using (Graphics g_desctop = Graphics.FromHdc(desktop))
                 {
-                    for (int i = 0; i < 10; i++)
+                    for (int i = 0; i < 40; i++)
                     {
-                        g_desctop.DrawRectangle(new Pen(Color.GreenYellow, 3), x, y, Width, Height);
-                        Thread.Sleep(20);
+                        g_desctop.DrawRectangle(new Pen(Color.Crimson, 3), x-1, y-1, Width+1, Height+1);
+                        Thread.Sleep(5);
                     }
                 }
                 ReleaseDC(IntPtr.Zero, desktop);
@@ -49,6 +49,22 @@ namespace BOCollector
         }
 
 
+        static async internal void DrawPoint(int x, int y)
+        {
+            await Task.Run(() =>
+            {
+                IntPtr desktop = GetDC(IntPtr.Zero); // указатель для вывода изображения на экран
+                using (Graphics g_desctop = Graphics.FromHdc(desktop))
+                {
+                    for (int i = 0; i < 40; i++)
+                    {
+                        g_desctop.DrawRectangle(new Pen(Color.Crimson, 3), x - 1, y - 1, 2,2);
+                        Thread.Sleep(5);
+                    }
+                }
+                ReleaseDC(IntPtr.Zero, desktop);
+            });
+        }
 
 
 
@@ -68,18 +84,21 @@ namespace BOCollector
         //    ReleaseDC(IntPtr.Zero, desktop);
         //}
 
-        //static public void String(string s, int x, int y, Rectangle rec)
-        //{
-        //    Font font = new Font(FontFamily.GenericSansSerif, 10);
-        //    IntPtr desktop = GetDC(IntPtr.Zero); // указатель для вывода изображения на экран
-        //    using (Graphics g_desctop = Graphics.FromHdc(desktop))
-        //    {
-        //        g_desctop.DrawString(s, font, new SolidBrush(Color.Green), x + rec.X, y + rec.Y);
+        static public void String(string s, int x, int y)
+        {
+            Font font = new Font(FontFamily.GenericSansSerif, 20);
+            IntPtr desktop = GetDC(IntPtr.Zero); // указатель для вывода изображения на экран
+            using (Graphics g_desctop = Graphics.FromHdc(desktop))
+            {
+                for (int i = 0; i < 40; i++)
+                {
+                    g_desctop.DrawString(s, font, new SolidBrush(Color.White), x, y);
+                    Thread.Sleep(5);
+                }
+            }
+            ReleaseDC(IntPtr.Zero, desktop);
 
-        //    }
-        //    ReleaseDC(IntPtr.Zero, desktop);
-
-        //}
+        }
 
     }
 }

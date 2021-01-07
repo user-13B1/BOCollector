@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
+using System.Diagnostics;
 
 namespace BOCollector
 {
@@ -15,9 +16,9 @@ namespace BOCollector
         internal readonly AutoIt autoIt;
         internal readonly OpenCV openCV;
         internal readonly Images images;
-        internal delegate void DelegateEvent(string message);
-        internal event DelegateEvent Status;
-        
+        internal delegate void DelegateMessage(string message);
+        internal event DelegateMessage StatusGame;
+
 
         public GameControl(Writer console)
         {
@@ -28,30 +29,37 @@ namespace BOCollector
 
             menuControl = new MenuControl(console, autoIt, openCV, images);
             battleControl = new BattleControl(console, autoIt, openCV, images);
+           
+           
         }
 
-        internal void Start()
-        {
-            Task.Run(() => GameCycle());
-        }
+        internal void Start() => Task.Run(() => GameCycle());
 
         private void GameCycle()
         {
+           
             while (true)
             {
+               // Stopwatch stopwatch = new Stopwatch();
+               // stopwatch.Start();
+
                 if (menuControl.IsBattle())
                 {
-                    Status?.Invoke("Battle");
+                    StatusGame?.Invoke("Battle");
                     if (!battleControl.Start())
                         return;
                 }
                 else
                 {
-                    Status?.Invoke("Menu");
+                    Thread.Sleep(1000);
+                    StatusGame?.Invoke("Menu");
                     if (!menuControl.Start())
                         return;
                 }
-                Thread.Sleep(1000);
+
+                //stopwatch.Stop();
+               // console.WriteLine("ElapsedMilliseconds: " + stopwatch.ElapsedMilliseconds);
+                //break;
             }
         }
 

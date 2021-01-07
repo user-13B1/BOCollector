@@ -9,6 +9,8 @@ using System.Windows.Forms;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using System.Threading;
+using Point = OpenCvSharp.Point;
+
 
 namespace BOCollector
 {
@@ -20,7 +22,7 @@ namespace BOCollector
         Bitmap gameScreen_bitmap;
         Graphics gameScreen_graphics;
         System.Drawing.Size size_region;
-       
+        
 
         public OpenCV(Writer console, AutoIt autoIt)
         {
@@ -36,7 +38,7 @@ namespace BOCollector
             console.WriteLine("OpenCV loaded.");
         }
 
-        internal bool SearchImageFromDict(Dictionary<string, Bitmap> buttonImages, out OpenCvSharp.Point centerPoint, out string name)
+        internal bool SearchImageFromDict(Dictionary<string, Bitmap> buttonImages, out Point centerPoint, out string name)
         {
             window = autoIt.window;
             double threshold = 0.85;
@@ -101,33 +103,45 @@ namespace BOCollector
         }
 
 
-        internal bool SearchImageFromRegion(Bitmap bitmap, out OpenCvSharp.Point f, Rectangle regionSearch)
+        internal bool SearchImageFromRegion(Bitmap bitmap, out OpenCvSharp.Point f, Point start, Point end )
         {
-
             window = autoIt.window;
-            double threshold = 0.9;        //Пороговое значение SearchImg
+            double threshold = 0.8;        //Пороговое значение SearchImg
             f = new OpenCvSharp.Point();
             if (bitmap == null)
+            {
+                console.WriteLine("Error. Null bitmap.");
+                return false; 
+            }
+            if(start.X>=end.X || start.Y>=end.Y || end.X > window.Width || end.Y > window.Height)
+            {
+                console.WriteLine("Error region.");
                 return false;
-            gameScreen_graphics.CopyFromScreen(window.X, window.Y, 0, 0, size_region);                         //делаем скрин экрана
-            using Mat result = new Mat();
-            using Mat gameScreen = OpenCvSharp.Extensions.BitmapConverter.ToMat(gameScreen_bitmap);       //Сохраняем скрин экрана в mat
-            using Mat mat_region_desktop_gray = gameScreen.CvtColor(ColorConversionCodes.BGR2GRAY);
-            using Mat searchImg = OpenCvSharp.Extensions.BitmapConverter.ToMat(bitmap);
-            using Mat mat_search_gray = searchImg.CvtColor(ColorConversionCodes.BGR2GRAY);
+            }
 
-            Cv2.MatchTemplate(mat_region_desktop_gray, mat_search_gray, result, TemplateMatchModes.CCoeffNormed);        //Поиск шаблона
+            gameScreen_graphics.CopyFromScreen(window.X, window.Y, 0, 0, size_region);                    //делаем скрин экрана
+
+            using Mat gameScreen = OpenCvSharp.Extensions.BitmapConverter.ToMat(gameScreen_bitmap); //Сохраняем скрин экрана в mat
+            using Mat gameScreenGray = gameScreen.SubMat(start.Y, end.Y, start.X, end.X);
+            using Mat gameScreenGrayRegion = gameScreenGray.CvtColor(ColorConversionCodes.BGR2GRAY);
+
+            using Mat searchImg = OpenCvSharp.Extensions.BitmapConverter.ToMat(bitmap);
+            using Mat searchImgGray = searchImg.CvtColor(ColorConversionCodes.BGR2GRAY);
+
+            using Mat result = new Mat();
+
+            Cv2.MatchTemplate(gameScreenGrayRegion, searchImgGray, result, TemplateMatchModes.CCoeffNormed);        //Поиск шаблона
             Cv2.Threshold(result, result, threshold, 1.0, ThresholdTypes.Tozero);
             Cv2.MinMaxLoc(result, out double minVal, out double maxVal, out OpenCvSharp.Point minLoc, out OpenCvSharp.Point maxLoc); //Поиск точки
+
             if (maxVal > threshold)
             {
-                f = maxLoc;
-                DrawToScreen.DrawRect(maxLoc.X + window.X, maxLoc.Y + window.Y, bitmap.Width, bitmap.Height);
-
-                console.WriteLine(maxVal);
+                f = new OpenCvSharp.Point(maxLoc.X + start.X, maxLoc.Y + start.Y);
+                //DrawToScreen.DrawRect(maxLoc.X + window.X + start.X, maxLoc.Y + window.Y + start.Y, bitmap.Width, bitmap.Height);
             }
             else
                 return false;
+
 
             return true;
         }
@@ -183,3 +197,6 @@ namespace BOCollector
 
 // ImageButton imageButton = new ImageButton(name,i,bitmap);
 // buttons.Add(imageButton);
+
+//Cv2.ImShow("Matches", gameScreenGrayRegion);
+//Cv2.WaitKey();
