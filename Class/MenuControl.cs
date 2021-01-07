@@ -34,15 +34,14 @@ namespace BOCollector
         internal bool IsBattle()
         {
             autoIt.UpdateWindowPos();
-
             if (!autoIt.IsPixelColor(244, 49, 125697))
                 return false;
-
             return true;
         }
 
         public bool Start()
         {
+           
             CloseFrameOnScreen();
             string state = StateSearch();
             Operation action = GetAction(state);
@@ -84,7 +83,7 @@ namespace BOCollector
 
         bool ActionClassic()
         {
-            autoIt.UpdateWindowPos();
+           
             autoIt.ClickMouseToWindow(405, 614, 1000);
             autoIt.ClickMouseToWindow(405, 614, 1000);
             ActionVsAI();

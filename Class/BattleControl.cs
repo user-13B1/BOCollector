@@ -44,7 +44,7 @@ namespace BOCollector
 
         internal bool Start()
         {
-          
+            autoIt.UpdateWindowPos();
             UpdateData();
             //SetAction();
 
@@ -59,6 +59,7 @@ namespace BOCollector
 
         private void UpdateData()
         {
+
             UpdateHeroHealth();
             UpdateEnemyAttackHero();
             UpdateEnemyOnScreen();
@@ -204,12 +205,8 @@ namespace BOCollector
 
         private void UpdateHeroHealth()   //Определяем количество жизней игрока
         {
-            Bitmap bitmap;
-            Point p;
-          
-            images.gameImages.TryGetValue("Lifebar", out bitmap);
-            health = 0;
-            if (openCV.SearchImageFromRegion(bitmap, out p, new Point(550, 260), new Point(630, 330)))
+            images.gameImages.TryGetValue("Lifebar", out Bitmap bitmap);
+            if (openCV.SearchImageFromRegion(bitmap, out Point p, new Point(550, 260), new Point(630, 330)))
             {
 
                 for (int i = 0; i <= 100; i += 4)
@@ -225,8 +222,7 @@ namespace BOCollector
                     //DrawToScreen.DrawPoint(p.X + 7 + i + autoIt.window.X, p.Y + 7 + autoIt.window.Y);
                     health = i;
                 }
-                if (health == 0)
-                    health = 100;
+           
 
                 StatusHeroHealth?.Invoke(health);
             }
@@ -237,29 +233,19 @@ namespace BOCollector
 
         private void UpdateEnemyOnScreen()
         {
+            images.gameImages.TryGetValue("EnemyLife", out Bitmap bitmap);
+            if(openCV.SearchImagesFromRegion(bitmap,out List<Point> points, new Point(100, 40), new Point(1200, 600)))
+                foreach (var p in points)
+                {
+                    if (autoIt.IsHealthPixel(new Point(p.X + autoIt.window.X+ 12, p.Y + autoIt.window.Y+ 10)))
+                    {
+                        //DrawToScreen.DrawRect(p.X + autoIt.window.X, p.Y + autoIt.window.Y, 100, 200);
+                        //console.WriteLine($"Enemy spotted!");
+                        enemy = true;
+                        return;
+                    }
+                }
 
-            
-
-
-
-            if (SearchHealhBar(12454426) || SearchHealhBar(13243937) || SearchHealhBar(16204602))
-            {
-                console.WriteLine("Enemy spotted!");
-                enemy = true;
-               
-            }
-            else
-                enemy = false;
-
-
-        }
-
-        private bool SearchHealhBar(int color)
-        {
-            if (autoIt.FindPixelColorPos(12454426, 230, 40, 1200, 600, out Point p))
-                if (autoIt.GetPixelColor(p.X + 5, p.Y) == 12454426)
-                    return true;
-            return false;
         }
 
         private void UpdateEnemyAttackHero()

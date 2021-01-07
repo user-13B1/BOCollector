@@ -45,7 +45,7 @@ namespace BOCollector
 
         private void SetEnemyNearbyLabel(string message) => HealthBar.Invoke((Action)(() => labelEnemyNearby.Text = message));
 
-        private void button3_Click(object sender, EventArgs e) =>Task.Run(()=> game.menuControl.autoIt.PrintMousePosColor());
+       // private void button3_Click(object sender, EventArgs e) =>Task.Run(()=> game.menuControl.autoIt.PrintMousePosColor());
 
     }
 }

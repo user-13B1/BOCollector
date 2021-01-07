@@ -103,16 +103,18 @@ namespace BOCollector
         }
 
 
-        internal bool SearchImageFromRegion(Bitmap bitmap, out OpenCvSharp.Point f, Point start, Point end )
+        internal bool SearchImageFromRegion(Bitmap bitmap, out Point f, Point start, Point end )
         {
             window = autoIt.window;
             double threshold = 0.8;        //Пороговое значение SearchImg
             f = new OpenCvSharp.Point();
+
             if (bitmap == null)
             {
                 console.WriteLine("Error. Null bitmap.");
                 return false; 
             }
+
             if(start.X>=end.X || start.Y>=end.Y || end.X > window.Width || end.Y > window.Height)
             {
                 console.WriteLine("Error region.");
@@ -120,12 +122,11 @@ namespace BOCollector
             }
 
             gameScreen_graphics.CopyFromScreen(window.X, window.Y, 0, 0, size_region);                    //делаем скрин экрана
+            using Mat gameScreen = OpenCvSharp.Extensions.BitmapConverter.ToMat(gameScreen_bitmap);  //Сохраняем скрин экрана в mat
+            using Mat gameScreenGray = gameScreen.SubMat(start.Y, end.Y, start.X, end.X);            //Вырезаем область
+            using Mat gameScreenGrayRegion = gameScreenGray.CvtColor(ColorConversionCodes.BGR2GRAY); //Конвертируем в ЧБ   
 
-            using Mat gameScreen = OpenCvSharp.Extensions.BitmapConverter.ToMat(gameScreen_bitmap); //Сохраняем скрин экрана в mat
-            using Mat gameScreenGray = gameScreen.SubMat(start.Y, end.Y, start.X, end.X);
-            using Mat gameScreenGrayRegion = gameScreenGray.CvtColor(ColorConversionCodes.BGR2GRAY);
-
-            using Mat searchImg = OpenCvSharp.Extensions.BitmapConverter.ToMat(bitmap);
+            using Mat searchImg = OpenCvSharp.Extensions.BitmapConverter.ToMat(bitmap);            
             using Mat searchImgGray = searchImg.CvtColor(ColorConversionCodes.BGR2GRAY);
 
             using Mat result = new Mat();
@@ -176,7 +177,50 @@ namespace BOCollector
             return true;
         }
 
+        internal bool SearchImagesFromRegion(Bitmap bitmap, out List<Point> points, Point start, Point end)
+        {
+            window = autoIt.window;
+            double threshold = 0.77;  //Пороговое значение SearchImg
+            points = new List<Point>();
 
+            if (bitmap == null)
+            {
+                console.WriteLine("Error. Null bitmap.");
+                return false;
+            }
+
+            if (start.X >= end.X || start.Y >= end.Y || end.X > window.Width || end.Y > window.Height)
+            {
+                console.WriteLine("Error region.");
+                return false;
+            }
+
+            gameScreen_graphics.CopyFromScreen(window.X, window.Y, 0, 0, size_region);               //делаем скрин экрана
+            using Mat gameScreen = OpenCvSharp.Extensions.BitmapConverter.ToMat(gameScreen_bitmap);  //Сохраняем скрин экрана в mat
+            using Mat gameScreenGray = gameScreen.SubMat(start.Y, end.Y, start.X, end.X);            //Вырезаем область
+            using Mat gameScreenGrayRegion = gameScreenGray.CvtColor(ColorConversionCodes.BGR2GRAY); //Конвертируем в ЧБ  
+
+            using Mat searchImg = OpenCvSharp.Extensions.BitmapConverter.ToMat(bitmap);
+            using Mat searchImgGray = searchImg.CvtColor(ColorConversionCodes.BGR2GRAY);
+
+            using Mat result = new Mat();
+
+            Cv2.MatchTemplate(gameScreenGrayRegion, searchImgGray, result, TemplateMatchModes.CCoeffNormed);
+            Cv2.Threshold(result, result, threshold, 1.0, ThresholdTypes.Tozero);
+           
+            using Mat resultPoints = new Mat();
+            Cv2.FindNonZero(result, resultPoints);
+
+            for (int i = 0; i < resultPoints.Total(); i++)
+            {
+                points.Add(new Point(resultPoints.At<Point>(i).X + start.X, resultPoints.At<Point>(i).Y + start.Y));
+            }
+            
+            //Cv2.ImShow("Matches", result);
+            //Cv2.WaitKey();
+
+            return true;
+        }
     }
 }
 

@@ -143,7 +143,7 @@ namespace BOCollector
 
         public void PrintMousePos()
         {
-            UpdateWindowPos();
+           
             for (int i = 0; i < 2; i++)
             {
                 Thread.Sleep(TimeSpan.FromSeconds(3));
@@ -176,16 +176,6 @@ namespace BOCollector
         }
 
 
-
-
-        //internal bool FindPixelColor(int v)
-        //{
-        //    object search = au3.PixelSearch(window.X + 300, window.Y + 150, +window.X + window.Width - 300, window.Y + window.Height - 150, v);
-            
-        //    if (search.ToString() != "0")
-        //        return true;
-        //    return false;
-        //}
 
         internal bool FindPixelColor(int v,int x1,int y1,int x2,int y2)
         {
@@ -222,8 +212,15 @@ namespace BOCollector
 
 
 
-
-
     }
 }
 
+
+//internal bool FindPixelColor(int v)
+//{
+//    object search = au3.PixelSearch(window.X + 300, window.Y + 150, +window.X + window.Width - 300, window.Y + window.Height - 150, v);
+
+//    if (search.ToString() != "0")
+//        return true;
+//    return false;
+//}
