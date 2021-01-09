@@ -23,7 +23,7 @@ namespace BOCollector
         internal Key key;
         internal delegate void DelegateMessage(string message);
         internal event DelegateMessage StatusEnemyNearby;
-
+        OverlayDX overlay;
         int health;
         bool enemyAttakedHero;
         bool enemy;
@@ -31,28 +31,29 @@ namespace BOCollector
         bool TeamHero;
         bool canMoveForward = true;
         bool TowerAhead;
-        public BattleControl(Writer console, AutoIt autoIt, OpenCV openCV, Images images)
+
+        public BattleControl(Writer console, AutoIt autoIt, OpenCV openCV, Images images, OverlayDX overlay)
         {
             this.console = console;
             this.autoIt = autoIt;
             this.openCV = openCV;
             this.images = images;
+            this.overlay = overlay;
             key = new Key();
+           
         }
 
         
 
         internal bool Start()
         {
-            autoIt.UpdateWindowPos();
             UpdateData();
             //SetAction();
-
             //string state = UpdateState();
             //Operation action = GetAction(state);
             //if (!action())
             //    return false;
-
+           
             return true;
         }
 

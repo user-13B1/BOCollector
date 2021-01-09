@@ -10,7 +10,7 @@ using System.Windows.Forms;
 using System.Threading;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
-
+using Point = OpenCvSharp.Point;
 
 namespace BOCollector
 {
@@ -33,7 +33,7 @@ namespace BOCollector
 
         internal bool IsBattle()
         {
-            autoIt.UpdateWindowPos();
+           
             if (!autoIt.IsPixelColor(244, 49, 125697))
                 return false;
             return true;
@@ -41,7 +41,6 @@ namespace BOCollector
 
         public bool Start()
         {
-           
             CloseFrameOnScreen();
             string state = StateSearch();
             Operation action = GetAction(state);
@@ -57,6 +56,7 @@ namespace BOCollector
             "VsAI" => ActionVsAI,
             "ReturnLobby" => ActionDelay,
             "VS" => ActionDelay,
+            "Desktop" => ActionLaunchGame,
             { } => ActionError,
             null => ActionError
         };
@@ -101,7 +101,6 @@ namespace BOCollector
 
         bool ActionDelay()
         {
-
             Thread.Sleep(TimeSpan.FromMilliseconds(3000));
             return true;
         }
@@ -112,7 +111,14 @@ namespace BOCollector
             return true;
         }
 
-
+        bool ActionLaunchGame()
+        {
+            images.stateImages.TryGetValue("Desktop",out Bitmap bitmap);
+            openCV.SearchBitmapPos(bitmap,out _, out Point centerPoint);
+            autoIt.ClickMouseToWindow(centerPoint.X, centerPoint.Y);
+            Thread.Sleep(TimeSpan.FromSeconds(12));
+            return true;
+        }
     }
 }
 

@@ -18,16 +18,18 @@ namespace BOCollector
     {
         private readonly Writer console;
         private readonly AutoIt autoIt;
+        private readonly OverlayDX overlay;
         Rectangle window;
         Bitmap gameScreen_bitmap;
         Graphics gameScreen_graphics;
         System.Drawing.Size size_region;
         
 
-        public OpenCV(Writer console, AutoIt autoIt)
+        public OpenCV(Writer console, AutoIt autoIt, OverlayDX overlay)
         {
             this.console = console;
             this.autoIt = autoIt;
+            this.overlay = overlay;
             window = autoIt.window;
             if (window == null)
                 return;
@@ -61,8 +63,7 @@ namespace BOCollector
                 if (maxVal > threshold)
                 {
                     centerPoint = new OpenCvSharp.Point(maxLoc.X + buttonImage.Value.Width/2 , maxLoc.Y + buttonImage.Value.Height / 2);
-                    DrawToScreen.DrawRect(maxLoc.X + window.X, maxLoc.Y + window.Y, buttonImage.Value.Width, buttonImage.Value.Height);
-                    
+                    overlay.DrawRect(maxLoc.X, maxLoc.Y, buttonImage.Value.Width, buttonImage.Value.Height);
                     name = buttonImage.Key;
                     return true;
                 }
@@ -70,38 +71,6 @@ namespace BOCollector
             
             return false;
         }
-
-        internal bool SearchImageFromName(Bitmap bitmap, out OpenCvSharp.Point f)
-        {
-
-            window = autoIt.window;
-            double threshold = 0.9;        //Пороговое значение SearchImg
-            f = new OpenCvSharp.Point();
-            if(bitmap==null)
-                return false;
-            gameScreen_graphics.CopyFromScreen(window.X, window.Y, 0, 0, size_region);                         //делаем скрин экрана
-            using Mat result = new Mat();
-            using Mat gameScreen = OpenCvSharp.Extensions.BitmapConverter.ToMat(gameScreen_bitmap);       //Сохраняем скрин экрана в mat
-            using Mat mat_region_desktop_gray = gameScreen.CvtColor(ColorConversionCodes.BGR2GRAY);
-            using Mat searchImg = OpenCvSharp.Extensions.BitmapConverter.ToMat(bitmap);
-            using Mat mat_search_gray = searchImg.CvtColor(ColorConversionCodes.BGR2GRAY);
-
-            Cv2.MatchTemplate(mat_region_desktop_gray, mat_search_gray, result, TemplateMatchModes.CCoeffNormed);        //Поиск шаблона
-            Cv2.Threshold(result, result, threshold, 1.0, ThresholdTypes.Tozero);
-            Cv2.MinMaxLoc(result, out double minVal, out double maxVal, out OpenCvSharp.Point minLoc, out OpenCvSharp.Point maxLoc); //Поиск точки
-            if (maxVal > threshold)
-            {
-                f = maxLoc;
-                DrawToScreen.DrawRect(maxLoc.X + window.X, maxLoc.Y + window.Y, bitmap.Width, bitmap.Height);
-
-                console.WriteLine(maxVal); 
-            }
-            else
-                return false;
-
-            return true;
-        }
-
 
         internal bool SearchImageFromRegion(Bitmap bitmap, out Point f, Point start, Point end )
         {
@@ -138,7 +107,7 @@ namespace BOCollector
             if (maxVal > threshold)
             {
                 f = new OpenCvSharp.Point(maxLoc.X + start.X, maxLoc.Y + start.Y);
-                //DrawToScreen.DrawRect(maxLoc.X + window.X + start.X, maxLoc.Y + window.Y + start.Y, bitmap.Width, bitmap.Height);
+                overlay.DrawRect(maxLoc.X + start.X, maxLoc.Y+ start.Y, bitmap.Width, bitmap.Height);
             }
             else
                 return false;
@@ -147,29 +116,32 @@ namespace BOCollector
             return true;
         }
 
-
-
-        public bool SearchImg(Bitmap searchBitmap, out OpenCvSharp.Point f)
+        public bool SearchBitmapPos(Bitmap bitmap, out Point sourccePoint,out Point centerPoint)
         {
             window = autoIt.window;
             double threshold = 0.85;        //Пороговое значение SearchImg
-            f = new OpenCvSharp.Point();
+            sourccePoint = new Point();
+            centerPoint = new Point();
+            if (bitmap == null)
+                return false;
+
             gameScreen_graphics.CopyFromScreen(window.X, window.Y, 0, 0, size_region);                         //делаем скрин экрана
             
-            using Mat result = new Mat();
+            using Mat resultImg = new Mat();
             using Mat gameScreen = OpenCvSharp.Extensions.BitmapConverter.ToMat(gameScreen_bitmap);       //Сохраняем скрин экрана в mat
-            using Mat searchImg = OpenCvSharp.Extensions.BitmapConverter.ToMat(searchBitmap);
-            using Mat mat_region_desktop_gray = gameScreen.CvtColor(ColorConversionCodes.BGR2GRAY);
-            using Mat mat_search_gray = searchImg.CvtColor(ColorConversionCodes.BGR2GRAY);
+            using Mat searchImg = OpenCvSharp.Extensions.BitmapConverter.ToMat(bitmap);
+            using Mat gameScreenGray = gameScreen.CvtColor(ColorConversionCodes.BGR2GRAY);
+            using Mat searchImgGray = searchImg.CvtColor(ColorConversionCodes.BGR2GRAY);
          
-            Cv2.MatchTemplate(mat_region_desktop_gray, mat_search_gray, result, TemplateMatchModes.CCoeffNormed);        //Поиск шаблона
-            Cv2.Threshold(result, result, threshold, 1.0, ThresholdTypes.Tozero);                                    //Оптимизация
-            Cv2.MinMaxLoc(result, out double minVal, out double maxVal, out OpenCvSharp.Point minLoc, out OpenCvSharp.Point maxLoc); //Поиск точки
+            Cv2.MatchTemplate(gameScreenGray, searchImgGray, resultImg, TemplateMatchModes.CCoeffNormed);        //Поиск шаблона
+            Cv2.Threshold(resultImg, resultImg, threshold, 1.0, ThresholdTypes.Tozero);                                    //Оптимизация
+            Cv2.MinMaxLoc(resultImg, out double minVal, out double maxVal, out OpenCvSharp.Point minLoc, out OpenCvSharp.Point maxLoc); //Поиск точки
 
             if (maxVal > threshold)
             {
-                f = maxLoc;
-                DrawToScreen.DrawRect(maxLoc.X + window.X, maxLoc.Y + window.Y, searchBitmap.Width, searchBitmap.Height);
+                sourccePoint = maxLoc;
+                centerPoint = new Point(maxLoc.X + bitmap.Width / 2, maxLoc.Y + bitmap.Height / 2);
+                overlay.DrawRect(maxLoc.X, maxLoc.Y, bitmap.Width, bitmap.Height);
             }
             else
                 return false;
@@ -225,19 +197,6 @@ namespace BOCollector
 }
 
 
-//struct ImageButton
-//{
-//    public string name;
-//    public int num;
-//    Bitmap bitmap;
-
-//    public ImageButton(string name, int num, Bitmap bitmap)
-//    {
-//        this.name = name;
-//        this.num = num;
-//        this.bitmap = bitmap;
-//    }
-//}
 
 // ImageButton imageButton = new ImageButton(name,i,bitmap);
 // buttons.Add(imageButton);

@@ -8,7 +8,7 @@ using AutoItX3Lib;
 using System.Threading;
 using System.Globalization;
 using Point = OpenCvSharp.Point;
-
+using System.Windows.Forms;
 
 namespace BOCollector
 {
@@ -18,6 +18,7 @@ namespace BOCollector
         private readonly Writer console;
         private readonly string appName;
         internal Rectangle window;
+
 
         public AutoIt(Writer console,string appName)
         {
@@ -49,6 +50,13 @@ namespace BOCollector
            
             window = new Rectangle(au3.WinGetPosX(appName), au3.WinGetPosY(appName), au3.WinGetPosWidth(appName), au3.WinGetPosHeight(appName));
             return true;
+        }
+
+
+
+        internal System.Drawing.Point GetPosWindow()
+        {
+            return new System.Drawing.Point(window.X, window.Y);
         }
 
         public bool SetWindow()

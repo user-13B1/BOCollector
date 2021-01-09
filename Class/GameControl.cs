@@ -18,30 +18,34 @@ namespace BOCollector
         internal readonly Images images;
         internal delegate void DelegateMessage(string message);
         internal event DelegateMessage StatusGame;
-
+        internal readonly OverlayDX overlay;
 
         public GameControl(Writer console)
         {
             this.console = console;
             autoIt = new AutoIt(console, "LDPlayer-1");
-            openCV = new OpenCV(console, autoIt);
+          
             images = new Images(console, autoIt, openCV);
+            overlay = new OverlayDX(autoIt);
+            openCV = new OpenCV(console, autoIt, overlay);
 
             menuControl = new MenuControl(console, autoIt, openCV, images);
-            battleControl = new BattleControl(console, autoIt, openCV, images);
-           
+            battleControl = new BattleControl(console, autoIt, openCV, images, overlay);
            
         }
 
-        internal void Start() => Task.Run(() => GameCycle());
+        internal void Start()
+        {
+            autoIt.UpdateWindowPos();
+            overlay.Load();
+            Task.Run(() => GameCycle());
+        }
+
 
         private void GameCycle()
         {
-           
             while (true)
             {
-               // Stopwatch stopwatch = new Stopwatch();
-               // stopwatch.Start();
 
                 if (menuControl.IsBattle())
                 {
@@ -51,18 +55,23 @@ namespace BOCollector
                 }
                 else
                 {
-                    Thread.Sleep(1000);
                     StatusGame?.Invoke("Menu");
                     if (!menuControl.Start())
                         return;
+                    Thread.Sleep(1000);
                 }
 
-                //stopwatch.Stop();
-               // console.WriteLine("ElapsedMilliseconds: " + stopwatch.ElapsedMilliseconds);
-                //break;
+                overlay.UpdateFrame();
+                overlay.ClearElements();
             }
         }
 
     }
 }
 
+//Stopwatch stopwatch = new Stopwatch();
+//stopwatch.Start();
+
+//stopwatch.Stop();
+//console.WriteLine("ElapsedMilliseconds: " + stopwatch.ElapsedMilliseconds);
+//break;
