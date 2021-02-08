@@ -23,100 +23,131 @@ namespace BOCollector
         public const byte E = 0x45;
         public const byte A = 0x41;
         public const byte C = 0x43;
-        byte oldKey1, oldKey2;
-        private string state = "Stop";
-        private int timer;
+        byte currentPressKey1, curentPressKey2;
+        public string newState = "Stop";
+        public string oldState = "Stop";
+        Writer console;
 
-
-
-        public void Forward(int delay = 1000)
+        public Key(Writer console)
         {
-            Move("Forward", RIGHT, UP, delay);
+            this.console = console;
+            Task.Run(()=>MoveHero());
+
         }
 
-        public void Back(int delay = 1000)
+        public void MoveHero()
         {
-            Move("Back", LEFT, DOWN, delay);
-        }
-
-        private void Move(string newState, byte key1, byte key2, int delay)
-        {
-            if (state == "Stop")
+            while (true)
             {
-                state = newState;
-                oldKey1 = key1;
-                oldKey2 = key2;
+                Thread.Sleep(500);
+                if (oldState == newState)
+                   continue;
                
-                timer = delay / 200;
-                keybd_event(key1, 0, 0, 0);
-                keybd_event(key2, 0, 0, 0);
-
-                while (timer > 0) 
+                switch (newState)
                 {
-                    timer--;
-                    if (timer % 5 == 0)
-                    {
-                        keybd_event(key1, 0, 2, 0);
-                        Thread.Sleep(360);
-                        keybd_event(key1, 0, 0, 0);
-                    }
-                    Thread.Sleep(200);
+                    case "Stop":
+                        Stop();
+                        break;
+
+                    case "Forward":
+                        console.WriteLine("Forward go");
+                        Forward();
+                        break;
+
+                    case "Back":
+                        Back();
+                        break;
+                   
+                    case "Right":
+                        Right();
+                        break;
+
+                    case "Left":
+                        Left();
+                        break;
+
+                    default:
+                        console.WriteLine("Error move");
+                        break;
                 }
-
-                if (state == "Stop")
-                    return;
-
-                keybd_event(key1, 0, 2, 0);
-                keybd_event(key2, 0, 2, 0);
-                state = "Stop";
-                return;
+                oldState = newState;
+              
             }
-          
-            if (state == newState)
-            {
-                timer = delay / 200;
-            }
-            else
-            {
-                timer = 0;
-                state = "Stop";
-                keybd_event(oldKey1, 0, 2, 0);
-                keybd_event(oldKey2, 0, 2, 0);
-                Move(newState, key1, key2, delay);
-            }
-
 
         }
 
-        public void Around()
+        public void Stop()
         {
-            keybd_event(LEFT, 0, 0, 0);
-            Thread.Sleep(400);
-            keybd_event(DOWN, 0, 0, 0);
-            Thread.Sleep(50);
-            keybd_event(LEFT, 0, 2, 0);
+          
+            keybd_event(currentPressKey1, 0, 2, 0);
+            keybd_event(curentPressKey2, 0, 2, 0);
+            currentPressKey1 = 0;
+            curentPressKey2 = 0;
            
-            Thread.Sleep(400);
-            keybd_event(RIGHT, 0, 0, 0);
-            Thread.Sleep(50);
-            keybd_event(DOWN, 0, 2, 0);
-
-            
-            Thread.Sleep(400);
-            keybd_event(UP, 0, 0, 0);
-            Thread.Sleep(50);
-            keybd_event(RIGHT, 0, 2, 0);
-           
-            Thread.Sleep(400);
-            keybd_event(UP, 0, 2, 0);
-
         }
+
+
+        public void Forward()
+        {
+            if(currentPressKey1!=0)
+                keybd_event(currentPressKey1, 0, 2, 0);
+            if(curentPressKey2!= 0)
+                keybd_event(curentPressKey2, 0, 2, 0);
+
+            keybd_event(UP, 0, 0, 0);
+            keybd_event(RIGHT, 0, 0, 0);
+           
+            currentPressKey1 = RIGHT;
+            curentPressKey2 = UP;
+        }
+
+        public void Right()
+        {
+            if (currentPressKey1 != 0)
+                keybd_event(currentPressKey1, 0, 2, 0);
+            if (curentPressKey2 != 0)
+                keybd_event(curentPressKey2, 0, 2, 0);
+
+            keybd_event(DOWN, 0, 0, 0);
+            keybd_event(RIGHT, 0, 0, 0);
+
+            currentPressKey1 = RIGHT;
+            curentPressKey2 = DOWN;
+        }
+
+        public void Left()
+        {
+            if (currentPressKey1 != 0)
+                keybd_event(currentPressKey1, 0, 2, 0);
+            if (curentPressKey2 != 0)
+                keybd_event(curentPressKey2, 0, 2, 0);
+
+            keybd_event(UP, 0, 0, 0);
+            keybd_event(LEFT, 0, 0, 0);
+
+            currentPressKey1 = LEFT;
+            curentPressKey2 = UP;
+        }
+
+
+        public void Back()
+        {
+            if (currentPressKey1 != 0)
+                keybd_event(currentPressKey1, 0, 2, 0);
+            if (curentPressKey2 != 0)
+                keybd_event(curentPressKey2, 0, 2, 0);
+            
+            keybd_event(DOWN, 0, 0, 0);
+            keybd_event(LEFT, 0, 0, 0);
+
+            currentPressKey1 = LEFT;
+            curentPressKey2 = DOWN;
+            
+        }
+
 
         public void AttackAllSkills()
         {
-            keybd_event(A, 0, 0, 0);
-            keybd_event(A, 0, 2, 0);
-            Thread.Sleep(30);
             keybd_event(Q, 0, 0, 0);
             keybd_event(Q, 0, 2, 0);
             Thread.Sleep(30);
@@ -125,9 +156,7 @@ namespace BOCollector
             Thread.Sleep(30);
             keybd_event(E, 0, 0, 0);
             keybd_event(E, 0, 2, 0);
-            Thread.Sleep(30);
-            keybd_event(A, 0, 0, 0);
-            keybd_event(A, 0, 2, 0);
+           
         }
 
         public void PreeHealth()
@@ -136,7 +165,6 @@ namespace BOCollector
             keybd_event(C, 0, 2, 0);
 
         }
-
         
         public void BaseAttack()
         {

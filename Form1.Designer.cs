@@ -118,7 +118,7 @@ namespace BOCollector
             this.ConsoleBox.Multiline = true;
             this.ConsoleBox.Name = "ConsoleBox";
             this.ConsoleBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.ConsoleBox.Size = new System.Drawing.Size(213, 156);
+            this.ConsoleBox.Size = new System.Drawing.Size(213, 197);
             this.ConsoleBox.TabIndex = 1;
             // 
             // Form1

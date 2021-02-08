@@ -25,12 +25,13 @@ namespace BOCollector
         internal event DelegateMessage StatusEnemyNearby;
         OverlayDX overlay;
         int health;
-        bool enemyAttakedHero;
+        bool IsBattle;
         bool enemy;
         bool enemyLowHealth;
         bool TeamHero;
         bool canMoveForward = true;
-        bool TowerAhead;
+        bool TowerZone,TowerAhead;
+        bool HeroAboveLine,HeroBelowLine;
 
         public BattleControl(Writer console, AutoIt autoIt, OpenCV openCV, Images images, OverlayDX overlay)
         {
@@ -39,8 +40,9 @@ namespace BOCollector
             this.openCV = openCV;
             this.images = images;
             this.overlay = overlay;
-            key = new Key();
-           
+            key = new Key(console);
+            HeroAboveLine = HeroBelowLine = false;
+
         }
 
         
@@ -48,135 +50,241 @@ namespace BOCollector
         internal bool Start()
         {
             UpdateData();
-            //SetAction();
-            //string state = UpdateState();
-            //Operation action = GetAction(state);
-            //if (!action())
-            //    return false;
-           
+            SetAction();
             return true;
         }
 
+       
 
         private void UpdateData()
         {
-
             UpdateHeroHealth();
-            UpdateEnemyAttackHero();
+            UpdateIsBattle();
             UpdateEnemyOnScreen();
             UpdateTeamHero();
+            UpdateTowerZone();
             UpdateTowerAhead();
+            CheckPos();
+        }
+
+        private void CheckPos()
+        {
+            if(openCV.IsHeroCameOutLine(out bool isAboveLine))
+            {
+                if (isAboveLine)
+                {
+                    console.WriteLine("Hero is above line");
+                    HeroAboveLine = true;
+                }
+                else
+                {
+                    console.WriteLine("Hero is below line");
+                    HeroBelowLine = true;
+                }
+            }
+        }
+
+        private void UpdateTowerZone()
+        {
+            images.gameImages.TryGetValue("Tower", out Bitmap bitmap);
+            if (openCV.SearchImageFromRegion(bitmap, out Point p, new Point(300, 40), new Point(1220, 600)))
+            {
+                Color color = autoIt.IntToColor(autoIt.au3.PixelGetColor(p.X+13+ autoIt.window.X, p.Y+10+ autoIt.window.Y));
+                if (color.R > 150 && color.G > 150 && color.B < 150)
+                {
+                    overlay.DrawText("TowerZone!", 40, 680);
+                    overlay.DrawRect(p.X - 10, p.Y - 10, 46, 46);
+                    TowerZone = true;
+                }
+            }
+         
+            else TowerZone = false;
 
         }
 
         private void UpdateTowerAhead()
         {
-
-            if (autoIt.FindPixelColor(16764618, 1234, 550, 1280, 595))
+            Color color = autoIt.IntToColor(autoIt.au3.PixelGetColor(1246 + autoIt.window.X, 565 + autoIt.window.Y));
+            if (color.R > 170 && color.G > 170 && color.B > 170)
+            {
+                overlay.DrawText("TowerAhead!", 40, 680);
                 TowerAhead = true;
+            }
+
             else TowerAhead = false;
+
         }
+
+        private void UpdateHeroHealth()   //Определяем количество жизней игрока
+        {
+            images.gameImages.TryGetValue("Lifebar", out Bitmap bitmap);
+            if (openCV.SearchImageFromRegion(bitmap, out Point p, new Point(550, 260), new Point(630, 330)))
+            {
+
+                for (int i = 0; i <= 100; i += 4)
+                {
+                    int color1 = autoIt.GetPixelColor(p.X + 7 + i, p.Y + 7);
+                    int color2 = autoIt.GetPixelColor(p.X + 11 + i, p.Y + 7);
+                    if ((color1 < 6000000 || color1 > 7000000) && (color2 < 6000000 || color2 > 7000000))
+                    {
+                        break;
+                    }
+                    if (i > 10)
+                        health = i;
+                }
+
+                overlay.DrawRect(p.X - 20, p.Y - 20, 150, 240);
+                overlay.DrawText(health.ToString(), 20, 600);
+                StatusHeroHealth?.Invoke(health);
+            }
+            else
+                StatusHeroHealth?.Invoke(0);
+
+        }
+
+        private void UpdateEnemyOnScreen()
+        {
+            images.gameImages.TryGetValue("EnemyLife", out Bitmap bitmap);
+            if (openCV.SearchImagesFromRegion(bitmap, out List<Point> points, new Point(100, 40), new Point(1200, 600)))
+                foreach (var p in points)
+                {
+                    if (autoIt.IsHealthPixel(new Point(p.X + autoIt.window.X + 12, p.Y + autoIt.window.Y + 10)))
+                    {
+                        overlay.DrawRect(p.X - 20, p.Y - 20, 150, 240);
+                        overlay.DrawText("Enemy spotted!", 20, 640);
+                        enemy = true;
+                        return;
+                    }
+                }
+           
+            enemy = false;
+        }
+
+        private void UpdateIsBattle()
+        {
+            if (autoIt.GetPixelColor(600, 100) == 13112352)
+            {
+                IsBattle = true;
+                overlay.DrawText("In battle.", 20, 620);
+
+                if (autoIt.GetPixelColor(620, 100) != 13112352)
+                {
+                    enemyLowHealth = true;
+                    overlay.DrawText("Low health enemy.", 80, 620);
+                }
+                else
+                    enemyLowHealth = false;
+            }
+            else
+                IsBattle = false;
+
+        }
+
+        private void UpdateTeamHero()
+        {
+            if (autoIt.FindPixelColorPos(29382, 600, 30, 1200, 500, out Point p))
+            {
+                if (autoIt.GetPixelColor(p.X + 5, p.Y) == 29382)
+                {
+                    overlay.DrawText("Team Hero.", 20, 660);
+                    overlay.DrawRect(p.X - 20, p.Y - 20, 150, 240);
+                    TeamHero = true;
+                    return;
+                }
+
+            }
+            TeamHero = false;
+        }
+
+
+
 
         private void SetAction()
         {
+            if(HeroAboveLine)
+            {
+                key.newState = "Right";
+                Thread.Sleep(TimeSpan.FromMilliseconds(2000));
+                key.newState = "Stop";
+                HeroAboveLine = false;
+            }
+
+            if (HeroBelowLine)
+            {
+                key.newState = "Left";
+                Thread.Sleep(TimeSpan.FromMilliseconds(2000));
+                key.newState = "Stop";
+                HeroBelowLine = false;
+            }
+
+
             if (IsDeath())
             {
-                DrawToScreen.String("Death", autoIt.window.X + 300, autoIt.window.Y + 700);
+                overlay.DrawText("Death", 80, 700);
+                key.newState = "Stop";
                 ActionDelay();
                 return;
             }
 
-            if (IsTower())
+            if (TowerZone)
             {
-                DrawToScreen.String("Tower!Go back", autoIt.window.X+300,autoIt.window.Y + 700);
-
-                ActionBack(3000);
+                overlay.DrawText("Tower.Back", 50, 260);
+                key.newState = "Back";
                 ActionHealth();
+                ActionAttack();
+
                 ActionBaseAttack();
-                Task.Run(() => BlockForwardMove(10000));
+                Task.Run(() => BlockForwardMove(4000));
                 return;
             }
 
-            if (enemyLowHealth)
+            if (TowerAhead && enemy)
             {
-                DrawToScreen.String("Attack weak enemy!", autoIt.window.X + 300, autoIt.window.Y + 700);
-               
+                overlay.DrawText("Stop - Attack - Back", 50, 280);
+                key.newState = "Stop";
                 ActionAttack();
-                Thread.Sleep(1000);
+                key.newState = "Back";
                 return;
             }
 
-
-
-            if (TeamHero && enemy && health > 10)
+            if (TowerAhead)
             {
-                DrawToScreen.String("Attack enemy!", autoIt.window.X + 300, autoIt.window.Y + 700);
-
-                ActionAttack();
-                return;
-            }
-          
-
-            if (!enemyAttakedHero && enemy && !TeamHero && health < 40)
-            {
-                DrawToScreen.String("Back!", autoIt.window.X + 300, autoIt.window.Y + 700);
-
-                ActionBack(1000);
-                ActionAttack();
+                overlay.DrawText("Tower ahead - Back.", 50, 280);
+                key.newState = "Back";
+                ActionBaseAttack();
+                Task.Run(() => BlockForwardMove(1000));
                 return;
             }
 
-            if (health <= 50 && enemyAttakedHero)
-            {
-                DrawToScreen.String("Low Health, Back!", autoIt.window.X + 300, autoIt.window.Y + 700);
-                ActionBack(3000);
-                return;
-            }
-
-            if (health <= 30 && enemyAttakedHero)
-            {
-                DrawToScreen.String("Low Health, Back!", autoIt.window.X + 300, autoIt.window.Y + 700);
-                ActionBack(3000);
-                return;
-            }
-
-            if (health > 50 && enemyAttakedHero)
-            {
-                DrawToScreen.String("Attack!", autoIt.window.X + 300, autoIt.window.Y + 700);
-                ActionAttack();
-                Thread.Sleep(500);
-                ActionAttack();
-                Thread.Sleep(500);
-                return;
-            }
 
             if (enemy)
             {
-                DrawToScreen.String("Base Attack!", autoIt.window.X + 300, autoIt.window.Y + 700);
+                overlay.DrawText("Attack enemy!", 50, 260);
+                ActionAttack();
                 ActionBaseAttack();
-                Thread.Sleep(1500);
-
-                Task.Run(()=>BlockForwardMove(5000));
                 return;
             }
+
+
+            if (enemy && IsBattle)
+            {
+                overlay.DrawText("Attack enemy!", 50, 260);
+                key.newState = "Stop";
+                ActionAttack();
+                return;
+            }
+
 
             if (canMoveForward)
             {
-                DrawToScreen.String("Forward!", autoIt.window.X + 300, autoIt.window.Y + 700);
-                ActionForward(3000);
+                overlay.DrawText("Forward!", 50, 260);
+                key.newState = "Forward";
                 return;
             }
 
-           
-            Task.Run(() => ActionMoveAround());
+            overlay.DrawText("BaseAttack.", 50, 260);
+            ActionBaseAttack();
             return;
-        }
-
-        private void ActionMoveAround()
-        {
-            console.WriteLine("Around.");
-            key.Around();
-            
         }
 
         private void BlockForwardMove(int v)
@@ -204,118 +312,11 @@ namespace BOCollector
             return false;
         }
 
-        private void UpdateHeroHealth()   //Определяем количество жизней игрока
-        {
-            images.gameImages.TryGetValue("Lifebar", out Bitmap bitmap);
-            if (openCV.SearchImageFromRegion(bitmap, out Point p, new Point(550, 260), new Point(630, 330)))
-            {
-
-                for (int i = 0; i <= 100; i += 4)
-                {
-                    int color1 = autoIt.GetPixelColor(p.X + 7 + i, p.Y + 7);
-                    int color2 = autoIt.GetPixelColor(p.X + 11 + i, p.Y + 7);
-                    //console.WriteLine($"color1 {color1} color2 {color2}");
-                    if ((color1 < 6000000 || color1 > 7000000) && (color2 < 6000000 || color2 > 7000000))
-                    {
-
-                        break;
-                    }
-                    //DrawToScreen.DrawPoint(p.X + 7 + i + autoIt.window.X, p.Y + 7 + autoIt.window.Y);
-                    health = i;
-                }
-           
-
-                StatusHeroHealth?.Invoke(health);
-            }
-            else
-                StatusHeroHealth?.Invoke(0);
-
-        }
-
-        private void UpdateEnemyOnScreen()
-        {
-            images.gameImages.TryGetValue("EnemyLife", out Bitmap bitmap);
-            if(openCV.SearchImagesFromRegion(bitmap,out List<Point> points, new Point(100, 40), new Point(1200, 600)))
-                foreach (var p in points)
-                {
-                    if (autoIt.IsHealthPixel(new Point(p.X + autoIt.window.X+ 12, p.Y + autoIt.window.Y+ 10)))
-                    {
-                        //DrawToScreen.DrawRect(p.X + autoIt.window.X, p.Y + autoIt.window.Y, 100, 200);
-                        //console.WriteLine($"Enemy spotted!");
-                        enemy = true;
-                        return;
-                    }
-                }
-
-        }
-
-        private void UpdateEnemyAttackHero()
-        {
-            if (autoIt.GetPixelColor(600, 100) == 13112352)
-            {
-                enemyAttakedHero = true;
-
-                if (autoIt.GetPixelColor(620, 100) != 13112352)
-                {
-                    enemyLowHealth = true;
-                    console.WriteLine("Low health enemy.");
-                }
-                else
-                    enemyLowHealth = false;
-            }
-            else
-                enemyAttakedHero = false;
-
-            StatusEnemyNearby?.Invoke(enemyAttakedHero.ToString());
-        }
-
-        private void UpdateTeamHero()
-        {
-            if (autoIt.FindPixelColorPos(29382, 600, 30, 1200, 500, out Point p))
-            {
-                if (autoIt.GetPixelColor(p.X + 5, p.Y) == 29382)
-                {
-                    console.WriteLine("Team Hero.");
-                    //DrawToScreen.DrawRect(p.X + autoIt.window.X, p.Y + autoIt.window.Y, 80, 160);
-                    TeamHero = true;
-                    return;
-                }
-
-            }
-            TeamHero = false;
-        }
-
-        private bool IsTower()
-        {
-            if (autoIt.FindPixelColor(13041664,300,150,1140,600))
-            {
-                console.WriteLine("Danger - Tower.");
-                return true;
-            }
-            return false;
-
-        }
-
-        void ActionForward(int dist)
-        {
-            if(TowerAhead)
-                return;
-            console.WriteLine("Action Forward.");
-            Task.Run(() => key.Forward(dist));
-            
-        }
-
-        void ActionBack(int dist)
-        {
-            console.WriteLine("Action Back.");
-            key.Back(dist);
-        }
 
         bool ActionAttack()
         {
             console.WriteLine(" ActionAttack!");
             key.AttackAllSkills();
-            key.BaseAttack();
            
             return true;
         }

@@ -64,7 +64,8 @@ namespace BOCollector
             renderTarget.TextAntialiasMode = TextAntialiasMode.Cleartype;
             renderTarget.StrokeWidth = 1.5f;
 
-            brush = new SolidColorBrush(renderTarget, new RawColor4(0, 1, 0, 1));
+            brush = new SolidColorBrush(renderTarget, new RawColor4(0, 1, 0,0.8f));
+           
             DWfactory = new SharpDX.DirectWrite.Factory();
             textFormat = new SharpDX.DirectWrite.TextFormat(DWfactory, "Calibri", 16);
         }
@@ -89,10 +90,16 @@ namespace BOCollector
             
             foreach(var rect in rects)
             {
-                renderTarget.DrawRectangle(new RawRectangleF(rect.X, rect.Y, rect.Width+ rect.X, rect.Height + rect.Y), brush);
+                renderTarget.DrawRectangle(new RawRectangleF(rect.X-1, rect.Y-1, rect.Width+ rect.X+1, rect.Height + rect.Y+1), brush);
             }
 
-           // renderTarget.DrawText("Target_1", textFormat, new RawRectangleF(300, 300, formWidth, formHeight), brush);
+            foreach(var text in texts)
+            {
+                renderTarget.DrawText(text.s, textFormat, new RawRectangleF(text.pos.X, text.pos.Y, text.pos.X+120, text.pos.Y+ 40), brush);
+
+            }
+          
+
             renderTarget.Flush();
             renderTarget.EndDraw();
             Thread.Sleep(16);
@@ -107,16 +114,26 @@ namespace BOCollector
         internal void DrawRect(int x, int y, int width, int height)
         {
             rects.Add(new Rectangle(x,y,width,height));
-            UpdateFrame();
+           // UpdateFrame();
         }
-
+        internal void DrawText(string s, int x, int y)
+        {
+            texts.Add(new textOverlay(s, new Point(x, y)));
+           // UpdateFrame();
+        }
+      
 
     }
 
     struct textOverlay
     {
-        string text;
-        Point pos;
+        public string s;
+        public Point pos;
 
+        public textOverlay(string text, Point pos)
+        {
+            this.s = text;
+            this.pos = pos;
+        }
     }
 }

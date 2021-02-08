@@ -21,7 +21,7 @@ namespace BOCollector
         {
             InitializeComponent();
             console = new Writer(new object(), this, ConsoleBox);
-           
+            
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -30,7 +30,6 @@ namespace BOCollector
             game.StatusGame += SetStatusGame;
             game.battleControl.StatusHeroHealth += SetHealthBar;
             game.battleControl.StatusEnemyNearby += SetEnemyNearbyLabel;
-
             //SetStatusGame("Loaded");
             //SetHealthBar(100);
         }

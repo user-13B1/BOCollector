@@ -31,7 +31,6 @@ namespace BOCollector
 
             menuControl = new MenuControl(console, autoIt, openCV, images);
             battleControl = new BattleControl(console, autoIt, openCV, images, overlay);
-           
         }
 
         internal void Start()
@@ -40,7 +39,6 @@ namespace BOCollector
             overlay.Load();
             Task.Run(() => GameCycle());
         }
-
 
         private void GameCycle()
         {
@@ -69,9 +67,3 @@ namespace BOCollector
     }
 }
 
-//Stopwatch stopwatch = new Stopwatch();
-//stopwatch.Start();
-
-//stopwatch.Stop();
-//console.WriteLine("ElapsedMilliseconds: " + stopwatch.ElapsedMilliseconds);
-//break;

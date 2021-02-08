@@ -36,7 +36,6 @@ namespace BOCollector
             gameScreen_bitmap = new Bitmap(window.Width, window.Height, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
             gameScreen_graphics = Graphics.FromImage(gameScreen_bitmap);
             size_region = new System.Drawing.Size(window.Width, window.Height);
-
             console.WriteLine("OpenCV loaded.");
         }
 
@@ -72,10 +71,50 @@ namespace BOCollector
             return false;
         }
 
+        internal bool IsHeroCameOutLine(out bool isAboveLine)
+        {
+            int radarHeight = 226;
+            isAboveLine = false;
+            System.Drawing.Size radarSize = new System.Drawing.Size(radarHeight, radarHeight);
+            using Bitmap radarImg = new Bitmap(radarHeight, radarHeight, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            using Graphics radarGrp = Graphics.FromImage(radarImg);
+            radarGrp.CopyFromScreen(window.X+1, window.Y+34, 0, 0, radarSize);
+            using Mat radarMat = OpenCvSharp.Extensions.BitmapConverter.ToMat(radarImg);
+
+            for (int i = 0; i < 150; i++)
+            {
+                var pixel = radarMat.Get<Vec3b>(165-i, 22 + i);
+                Color RgbColor = Color.FromArgb(pixel.Item2, pixel.Item1, pixel.Item0);
+                string hex = RgbColor.R.ToString("X2") + RgbColor.G.ToString("X2") + RgbColor.B.ToString("X2");
+                if (hex == "5FFF8C")
+                {
+                   
+                    isAboveLine = true;
+                    return true;
+                }
+
+                pixel = radarMat.Get<Vec3b>(200 - i, 56 + i);
+                RgbColor = Color.FromArgb(pixel.Item2, pixel.Item1, pixel.Item0);
+                hex = RgbColor.R.ToString("X2") + RgbColor.G.ToString("X2") + RgbColor.B.ToString("X2");
+                if (hex == "5FFF8C")
+                {
+                   
+                    isAboveLine = false;
+                    return true;
+                }
+
+
+            }
+
+            return false;
+        }
+
         internal bool SearchImageFromRegion(Bitmap bitmap, out Point f, Point start, Point end )
         {
-            window = autoIt.window;
-            double threshold = 0.8;        //Пороговое значение SearchImg
+            int widthRegion = end.X - start.X;
+            int heightRegion = end.Y - start.Y;
+
+            double threshold = 0.9;        //Пороговое значение SearchImg
             f = new OpenCvSharp.Point();
 
             if (bitmap == null)
@@ -84,16 +123,25 @@ namespace BOCollector
                 return false; 
             }
 
-            if(start.X>=end.X || start.Y>=end.Y || end.X > window.Width || end.Y > window.Height)
+            if(widthRegion < 1 || heightRegion < 1 || end.X > window.Width || end.Y > window.Height)
             {
                 console.WriteLine("Error region.");
                 return false;
             }
 
-            gameScreen_graphics.CopyFromScreen(window.X, window.Y, 0, 0, size_region);                    //делаем скрин экрана
-            using Mat gameScreen = OpenCvSharp.Extensions.BitmapConverter.ToMat(gameScreen_bitmap);  //Сохраняем скрин экрана в mat
-            using Mat gameScreenGray = gameScreen.SubMat(start.Y, end.Y, start.X, end.X);            //Вырезаем область
-            using Mat gameScreenGrayRegion = gameScreenGray.CvtColor(ColorConversionCodes.BGR2GRAY); //Конвертируем в ЧБ   
+           
+            using Bitmap gameRegion_bitmap = new Bitmap(widthRegion, heightRegion, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            using Graphics gameRegion_graphics = Graphics.FromImage(gameRegion_bitmap);
+
+            System.Drawing.Size region = new System.Drawing.Size(end.X - start.X, end.Y - start.Y);
+            gameRegion_graphics.CopyFromScreen(window.X + start.X, window.Y + start.Y, 0, 0, region);                    //делаем скрин экрана
+           
+
+            using Mat gameScreen = OpenCvSharp.Extensions.BitmapConverter.ToMat(gameRegion_bitmap);  //Сохраняем скрин экрана в mat
+            using Mat gameScreenGrayRegion = gameScreen.CvtColor(ColorConversionCodes.BGR2GRAY);
+
+            //Cv2.ImShow("Matches", gameScreen);
+            //Cv2.WaitKey();
 
             using Mat searchImg = OpenCvSharp.Extensions.BitmapConverter.ToMat(bitmap);            
             using Mat searchImgGray = searchImg.CvtColor(ColorConversionCodes.BGR2GRAY);
@@ -107,11 +155,10 @@ namespace BOCollector
             if (maxVal > threshold)
             {
                 f = new OpenCvSharp.Point(maxLoc.X + start.X, maxLoc.Y + start.Y);
-                overlay.DrawRect(maxLoc.X + start.X, maxLoc.Y+ start.Y, bitmap.Width, bitmap.Height);
+               // overlay.DrawRect(maxLoc.X + start.X, maxLoc.Y+ start.Y, bitmap.Width, bitmap.Height);
             }
             else
                 return false;
-
 
             return true;
         }
@@ -152,7 +199,7 @@ namespace BOCollector
         internal bool SearchImagesFromRegion(Bitmap bitmap, out List<Point> points, Point start, Point end)
         {
             window = autoIt.window;
-            double threshold = 0.77;  //Пороговое значение SearchImg
+            double threshold = 0.85;  //Пороговое значение SearchImg
             points = new List<Point>();
 
             if (bitmap == null)
