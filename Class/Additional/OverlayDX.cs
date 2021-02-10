@@ -44,7 +44,7 @@ namespace BOCollector
                 Enabled = true,
                 ShowIcon = false,
                 FormBorderStyle = FormBorderStyle.None,
-              //  FormBorderStyle = FormBorderStyle.FixedToolWindow,
+              //FormBorderStyle = FormBorderStyle.FixedToolWindow,
                 Width = formWidth,
                 Height = formHeight,
             };

@@ -110,7 +110,7 @@ namespace BOCollector
             this.ConsoleBox.Size = new System.Drawing.Size(213, 50);
             this.ConsoleBox.TabIndex = 1;
             // 
-            // Form1
+            // MLB
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -122,8 +122,8 @@ namespace BOCollector
             this.Controls.Add(this.statusStrip1);
             this.Controls.Add(this.ConsoleBox);
             this.Controls.Add(this.button1);
-            this.Name = "Form1";
-            this.Text = "To battle!";
+            this.Name = "MLB";
+            this.Text = "Go battle!";
             this.Load += new System.EventHandler(this.Form_Load);
             this.statusStrip1.ResumeLayout(false);
             this.statusStrip1.PerformLayout();
