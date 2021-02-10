@@ -11,32 +11,28 @@ using System.IO;
 
 namespace BOCollector
 {
-    public partial class Form1 : Form
+    public partial class MLB : Form
     {
         private readonly Writer console;
         GameControl game;
         
 
-        public Form1()
+        public MLB()
         {
             InitializeComponent();
             console = new Writer(new object(), this, ConsoleBox);
             
         }
 
-        private void Form1_Load(object sender, EventArgs e)
+        private void Form_Load(object sender, EventArgs e)
         {
             game = new GameControl(console);
             game.StatusGame += SetStatusGame;
             game.battleControl.StatusHeroHealth += SetHealthBar;
             game.battleControl.StatusEnemyNearby += SetEnemyNearbyLabel;
-            //SetStatusGame("Loaded");
-            //SetHealthBar(100);
         }
 
-        private void Button1_Click(object sender, EventArgs e) => game.Start();
-
-        private void button2_Click(object sender, EventArgs e) => game.menuControl.autoIt.PrintMousePos();
+        private void ButtonStart_Click(object sender, EventArgs e) => game.Start();
 
         private void SetStatusGame(string message) => StatusLabel1.Text = message;
 
@@ -44,7 +40,7 @@ namespace BOCollector
 
         private void SetEnemyNearbyLabel(string message) => HealthBar.Invoke((Action)(() => labelEnemyNearby.Text = message));
 
-       // private void button3_Click(object sender, EventArgs e) =>Task.Run(()=> game.menuControl.autoIt.PrintMousePosColor());
+    
 
     }
 }

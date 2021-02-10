@@ -10,7 +10,7 @@ namespace BOCollector
 {
     class GameControl
     {
-        private readonly Writer console;
+       
         internal readonly MenuControl menuControl;
         internal readonly BattleControl battleControl;
         internal readonly AutoIt autoIt;
@@ -22,7 +22,6 @@ namespace BOCollector
 
         public GameControl(Writer console)
         {
-            this.console = console;
             autoIt = new AutoIt(console, "LDPlayer-1");
           
             images = new Images(console, autoIt, openCV);

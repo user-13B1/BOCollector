@@ -23,7 +23,7 @@ namespace BOCollector
         internal Key key;
         internal delegate void DelegateMessage(string message);
         internal event DelegateMessage StatusEnemyNearby;
-        OverlayDX overlay;
+        readonly OverlayDX overlay;
         int health;
         bool IsBattle;
         bool enemy;
@@ -49,14 +49,13 @@ namespace BOCollector
 
         internal bool Start()
         {
-            UpdateData();
+            UpdateState();
             SetAction();
             return true;
         }
-
        
 
-        private void UpdateData()
+        private void UpdateState()
         {
             UpdateHeroHealth();
             UpdateIsBattle();
@@ -301,9 +300,7 @@ namespace BOCollector
 
         private bool IsDeath()
         {
-            Bitmap bitmap;
-
-            images.gameImages.TryGetValue("Death", out bitmap);
+            images.gameImages.TryGetValue("Death", out Bitmap bitmap);
             if (openCV.SearchImageFromRegion(bitmap, out _, new Point(560, 100), new Point(720, 140)))
             {
                 console.WriteLine("Hero is dead.");
@@ -325,12 +322,6 @@ namespace BOCollector
         {
             console.WriteLine("ActionBaseAttack!");
             key.BaseAttack();
-            return true;
-        }
-
-        bool ActionError()
-        {
-            console.WriteLine("Error State.");
             return true;
         }
 
